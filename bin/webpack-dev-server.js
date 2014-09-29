@@ -5,10 +5,10 @@ var url = require("url");
 
 // Local version replaces global one
 try {
-	var localWebpackDevServer = require.resolve(path.join(process.cwd(), "node_modules", "webpack-dev-server", "bin", "webpack-dev-server.js"));
-	if(__filename !== localWebpackDevServer) {
-		return require(localWebpackDevServer);
-	}
+  var localWebpackDevServer = require.resolve(path.join(process.cwd(), "node_modules", "webpack-dev-server", "bin", "webpack-dev-server.js"));
+  if(__filename !== localWebpackDevServer) {
+    return require(localWebpackDevServer);
+  }
 } catch(e) {}
 
 var Server = require("../lib/Server");
@@ -16,24 +16,26 @@ var webpack = require("webpack");
 
 var optimist = require("optimist")
 
-	.usage("webpack-dev-server " + require("../package.json").version + "\n" +
-			"Usage: https://github.com/webpack/docs/wiki/webpack-detailed-usage")
+  .usage("webpack-dev-server " + require("../package.json").version + "\n" +
+      "Usage: https://github.com/webpack/docs/wiki/webpack-detailed-usage")
 
-	.boolean("colors").alias("colors", "c").describe("colors")
+  .boolean("colors").alias("colors", "c").describe("colors")
 
-	.boolean("lazy").describe("lazy")
+  .boolean("lazy").describe("lazy")
 
-	.boolean("info").describe("info").default("info", true)
+  .boolean("info").describe("info").default("info", true)
 
-	.boolean("quiet").describe("quiet")
-	
-	.boolean("inline").describe("inline", "Inlines the webpack-dev-server logic into the bundle.")
+  .boolean("quiet").describe("quiet")
 
-	.string("content-base").describe("content-base", "A directory or URL to serve HTML content from.")
+  .boolean("inline").describe("inline", "Inlines the webpack-dev-server logic into the bundle.")
 
-	.string("content-base-target").describe("content-base-target", "Proxy requests to this target.")
+  .string("content-base").describe("content-base", "A directory or URL to serve HTML content from.")
 
-	.describe("port", "The port").default("port", 8080);
+  .string("content-static").describe("content-static", "An HTML file to serve for all not found requests.")
+
+  .string("content-base-target").describe("content-base-target", "Proxy requests to this target.")
+
+  .describe("port", "The port").default("port", 8080);
 
 require("webpack/bin/config-optimist")(optimist);
 
@@ -44,75 +46,78 @@ var wpOpt = require("webpack/bin/convert-argv")(optimist, argv, { outputFilename
 var options = wpOpt.devServer || {};
 
 if(!options.publicPath) {
-	options.publicPath = wpOpt.output && wpOpt.output.publicPath || "";
-	if(!/^(https?:)?\/\//.test(options.publicPath) && options.publicPath[0] !== "/")
-		options.publicPath = "/" + options.publicPath;
+  options.publicPath = wpOpt.output && wpOpt.output.publicPath || "";
+  if(!/^(https?:)?\/\//.test(options.publicPath) && options.publicPath[0] !== "/")
+    options.publicPath = "/" + options.publicPath;
 }
 
 if(!options.outputPath)
-	options.outputPath = "/";
+  options.outputPath = "/";
 if(!options.filename)
-	options.filename = wpOpt.output && wpOpt.output.filename;
+  options.filename = wpOpt.output && wpOpt.output.filename;
 [].concat(wpOpt).forEach(function(wpOpt) {
-	wpOpt.output.path = "/";
+  wpOpt.output.path = "/";
 });
 if(!options.hot)
-	options.hot = argv["hot"];
+  options.hot = argv["hot"];
 
 if(argv["content-base"]) {
-	options.contentBase = argv["content-base"];
-	if(/^[0-9]$/.test(options.contentBase))
-		options.contentBase = +options.contentBase;
-	else if(!/^(https?:)?\/\//.test(options.contentBase))
-		options.contentBase = path.resolve(options.contentBase);
+  options.contentBase = argv["content-base"];
+  if(/^[0-9]$/.test(options.contentBase))
+    options.contentBase = +options.contentBase;
+  else if(!/^(https?:)?\/\//.test(options.contentBase))
+    options.contentBase = path.resolve(options.contentBase);
 } else if(argv["content-base-target"]) {
-	options.contentBase = { target: argv["content-base-target"] };
+  options.contentBase = { target: argv["content-base-target"] };
 } else if(!options.contentBase) {
-	options.contentBase = process.cwd();
+  options.contentBase = process.cwd();
 }
 if(!options.stats) {
-	options.stats = {
-		cached: false,
-		cachedAssets: false
-	};
+  options.stats = {
+    cached: false,
+    cachedAssets: false
+  };
 }
 
+if(argv["content-static"])
+  options.contentStatic = argv["content-static"];
+
 if(argv["colors"])
-	options.stats.colors = true;
+  options.stats.colors = true;
 
 if(argv["lazy"])
-	options.lazy = true;
+  options.lazy = true;
 
 if(!argv["info"])
-	options.noInfo = true;
+  options.noInfo = true;
 
 if(argv["quiet"])
-	options.quiet = true;
-	
+  options.quiet = true;
+
 if(argv["inline"]) {
-	var devClient = [require.resolve("../client/") + "?http://localhost:" + argv.port];
-	if(options.hot)
-		devClient.push("webpack/hot/dev-server");
-	[].concat(wpOpt).forEach(function(wpOpt) {
-		if(typeof wpOpt.entry === "object") {
-			Object.keys(wpOpt.entry).forEach(function(key) {
-				wpOpt.entry[key] = devClient.concat(wpOpt.entry[key]);
-			});
-		} else {
-			wpOpt.entry = devClient.concat(wpOpt.entry);
-		}
-	});
+  var devClient = [require.resolve("../client/") + "?http://localhost:" + argv.port];
+  if(options.hot)
+    devClient.push("webpack/hot/dev-server");
+  [].concat(wpOpt).forEach(function(wpOpt) {
+    if(typeof wpOpt.entry === "object") {
+      Object.keys(wpOpt.entry).forEach(function(key) {
+        wpOpt.entry[key] = devClient.concat(wpOpt.entry[key]);
+      });
+    } else {
+      wpOpt.entry = devClient.concat(wpOpt.entry);
+    }
+  });
 }
 
 new Server(webpack(wpOpt), options).listen(argv.port, function(err) {
-	if(err) throw err;
-	if(argv["inline"])
-		console.log("http://localhost:" + argv.port + "/");
-	else
-		console.log("http://localhost:" + argv.port + "/webpack-dev-server/");
-	console.log("webpack result is served from " + options.publicPath);
-	if(typeof options.contentBase === "object")
-		console.log("requests are proxied to " + options.contentBase.target);
-	else
-		console.log("content is served from " + options.contentBase);
+  if(err) throw err;
+  if(argv["inline"])
+    console.log("http://localhost:" + argv.port + "/");
+  else
+    console.log("http://localhost:" + argv.port + "/webpack-dev-server/");
+  console.log("webpack result is served from " + options.publicPath);
+  if(typeof options.contentBase === "object")
+    console.log("requests are proxied to " + options.contentBase.target);
+  else
+    console.log("content is served from " + options.contentBase);
 });
