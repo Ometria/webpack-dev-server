@@ -26,10 +26,12 @@ var optimist = require("optimist")
 	.boolean("info").describe("info").default("info", true)
 
 	.boolean("quiet").describe("quiet")
-	
+
 	.boolean("inline").describe("inline", "Inlines the webpack-dev-server logic into the bundle.")
 
 	.string("content-base").describe("content-base", "A directory or URL to serve HTML content from.")
+
+	.string("content-static").describe("content-static", "An HTML file to serve for all not found requests.")
 
 	.string("content-base-target").describe("content-base-target", "Proxy requests to this target.")
 
@@ -88,7 +90,7 @@ if(!argv["info"])
 
 if(argv["quiet"])
 	options.quiet = true;
-	
+
 if(argv["inline"]) {
 	var devClient = [require.resolve("../client/") + "?http://localhost:" + argv.port];
 	if(options.hot)
