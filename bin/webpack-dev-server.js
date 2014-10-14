@@ -79,6 +79,9 @@ if(!options.stats) {
 	};
 }
 
+if(argv["content-static"])
+	options.contentStatic = argv["content-static"];
+
 if(argv["colors"])
 	options.stats.colors = true;
 
